@@ -6,10 +6,10 @@
 
 [//]: https://img.shields.io/badge/<LABEL>-<MESSAGE>-<COLOR>
 
+[![Author](https://img.shields.io/badge/Author-Jaideep25-brightgreen.svg)](https://www.github.com/Jaideep25/Videolify/)
 ![License: CC-NC](https://img.shields.io/badge/License-CCNC-blue.svg)
-[![Repo Link](https://img.shields.io/badge/Repo-Link-black.svg)](https://github.com/Jaideep25/Videolify)
+[![Repo Link](https://img.shields.io/badge/Repo-Link-black.svg)](https://github.com/Jaideep25/videolify)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?)](https://github.com/prettier/prettier)
-[![Gitter](https://badges.gitter.im/Videolify/community.svg)](https://gitter.im/Videolify/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Powered by `WebRTC` using google Stun and [numb](http://numb.viagenie.ca/) Turn. `Videolify` provides video quality and latency not available with traditional technology.
 
@@ -17,50 +17,54 @@ Open the app in one of following **supported browser**
 
 [//]: #![webrtc](www/images/webrtc.png)
 
-[![Foo](www/images/browsers.png)](https://videolify-jaideep25.up.railway.app/)
+[![Foo](www/images/browsers.png)](https://videolify-jaideep25.herokuapp.com/)
 
-## https://videolify-jaideep25.up.railway.app/
+## https://videolify.herokuapp.com/
 
 <br>
 
-[![Videolify](www/images/preview.png)](https://videolify-jaideep25.up.railway.app/)
+[![videolify](www/images/preview.png)](https://videolify.herokuapp.com/)
 
 ## Features
 
-- Is 100% `Free` and `Open Source`
+- Is `100% Free` and `Open Source`
 - No download, plug-in or login required, entirely browser based
-- Unlimited users, without time limitation
-- Room Url Sharing (share it to your participants, wait them to join)
+- Unlimited number of conference rooms without call time limitation
+- Desktop and Mobile compatible
+- Optimized Room Url Sharing (share it to your participants, wait them to join)
 - WebCam Streaming (Front - Rear for mobile)
 - Audio Streaming
 - Screen Sharing to present documents, slides, and more...
+- File Sharing, share any files to your participants in the room
 - Select Audio Input - Output && Video source
 - Recording your Screen, Audio and Video
-- Chat & Emoji Picker & Private messages & Save the conversations
-- Full Screen Mode on click
+- Chat with Emoji Picker & Private messages & Save the conversations
+- Simple Whiteboard for the teachers
+- Full Screen Mode on mouse click on the Video element
 - Possibility to Change UI Themes
-- Right click on Video elements for more options
-- Direct peer-to-peer connection ensures lowest latency thanks to webrtc
+- Right click on the Video elements for more options
+- Direct `peer-to-peer` connection ensures lowest latency thanks to `webrtc`
+- Supports `API` (Application Programming Interface)
 
 ## Demo
 
-- `Open` https://videolify-jaideep25.up.railway.app/newcall
+- `Open` https://videolify.herokuapp.com/newcall `or` https://videolify-jaideep25.up.railway.app/newcall
 - `Pick` your personal Room name and `Join To Room`
 - `Allow` to use the camera and microphone
 - `Share` the Room URL and `Wait` someone to join for video conference
 
 ## Room name
 
-- You can also `join` dirrectly to your room name by going to https://videolify-jaideep25.up.railway.app/join/your-room-name-goes-here
+- You can also `join` directly to your room name by going to https://videolify.herokuapp.com/join/your-room-name-goes-here `or` https://videolify-jaideep25.up.railway.app/join/your-room-name-goes-here
 
 ## Quick start
 
-- You will need to have [Node.js](https://nodejs.org/it/) installed, this project has been tested with Node version 12.X
+- You will need to have [Node.js](https://nodejs.org/en/blog/release/v12.22.1/) installed, this project has been tested with Node version 12.X
 - Clone this repo
 
 ```bash
-git clone git@github.com:Jaideep25/Videolify.git
-cd Videolify
+git clone https://github.com/Jaideep25/videolify.git
+cd videolify
 ```
 
 ## Setup Turn and Ngrok
@@ -73,6 +77,8 @@ cp .env.template .env
 
 `Turn`
 
+Not mandatory but recommended.
+
 - Create an account on http://numb.viagenie.ca
 - Get your Account USERNAME and PASSWORD
 - Fill in your credentials in the `.env` file
@@ -80,9 +86,11 @@ cp .env.template .env
 
 `Ngrok`
 
+Not mandatory at all, but useful for tests and debug.
+
 - Get started for free https://ngrok.com/
 - Fill in your authtoken in the `.env` file
-- Set `NGROK_ENABLED=true`, if you want to expose the server using the https tunnel, starting it from your local pc.
+- Set `NGROK_ENABLED=true`, if you want to expose the server using the https tunnel, starting it from your local PC.
 
 ## Install dependencies
 
@@ -97,7 +105,77 @@ npm start
 ```
 
 - Open http://localhost:3000 in browser
-- If you want to use a client on another computer/network, make sure you publish your server on an HTTPS connection.
-  You can use a service like [ngrok](https://ngrok.com/) Or deploy it on [heroku](https://www.heroku.com/).
 
-<p align="center"> Made with ❤️ by <a href="https://github.com/Jaideep25">Jaideep25</a></p>
+---
+
+## Docker
+
+Install: https://docs.docker.com/compose/install/
+
+```bash
+cp .env.template .env
+docker-compose up # or
+docker-compose up -d
+```
+
+- Open http://localhost:3000 in browser
+
+To `Update` image after some videolify `changes` or `updates`.
+
+```bash
+docker-compose build
+```
+
+To `Stops` containers and removes containers, networks, volumes, and images created by `up`
+
+```bash
+docker-compose down
+```
+
+## API
+
+The `response` will give you a `entrypoint / Room URL` for `your meeting`.
+
+```bash
+curl -X POST "http://localhost:3000/api/v1/meeting" -H "authorization: YourApiKeySecret" -H "Content-Type: application/json" -d "{ \"title\": \"Videolify GET meeting\"}"
+curl -X POST "https://videolify-jaideep25.up.railway.app/api/v1/meeting" -H "authorization: videolify_default_secret" -H "Content-Type: application/json" -d "{ \"title\": \"Videolify GET meeting\"}"
+curl -X POST "https://videolify-jaideep25.herokuapp.com/api/v1/meeting" -H "authorization: videolify_default_secret" -H "Content-Type: application/json" -d "{ \"title\": \"Videolify GET meeting\"}"
+```
+
+---
+
+If you want to use a client on another computer/network, make sure you publish your server on an `HTTPS` connection.
+You can use a service like [ngrok](https://ngrok.com/) or deploy it on:
+
+<br>
+
+[![Deploy on Heroku](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/)
+
+`DEMO` https://videolify.herokuapp.com/
+
+<br>
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app)
+
+` DEMO : ` https://videolify-jaideep25.up.railway.app/
+
+
+---
+
+## Credits
+
+Many Thanks to:
+
+- Special thanks to Miroslav Pejic!
+
+From where I took inspiration for this project. ❤️
+
+## Contributing
+
+- Pull Requests are welcome! :slightly_smiling_face:
+- Please run [prettier](https://prettier.io) on all of your PRs before submitting, this can be done with `prettier --write videolify/`
+
+
+---
+
+<p align="center"> Made with ❤️ by <a href="https://www.github.com/Jaideep25/">Jaideep25</a></p>
