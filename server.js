@@ -30,6 +30,7 @@ const { Server } = require("socket.io");
 const io = new Server().listen(server);
 const ngrok = require("ngrok");
 
+var API_KEY_SECRET = process.env.API_KEY_SECRET || "videolify_default_secret";
 var PORT = process.env.PORT || 3000; // signalingServerPort
 var localHost = "http://localhost:" + PORT; // http
 var channels = {}; // collect channels
@@ -46,8 +47,19 @@ var turnCredential = process.env.TURN_PASSWORD;
 // Use all static files from the www folder
 app.use(express.static(path.join(__dirname, "www")));
 
-// Remove trailing slashes in url
-app.use(function (req, res, next) {
+// Api parse body data as json
+app.use(express.json());
+
+// Remove trailing slashes in url handle bad requests
+app.use(function (err, req, res, next) {
+  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+    logme("Request Error", {
+      header: req.headers,
+      body: req.body,
+      error: err.message,
+    });
+    return res.status(400).send({ status: 404, message: err.message }); // Bad request
+  }
   if (req.path.substr(-1) === "/" && req.path.length > 1) {
     let query = req.url.slice(req.path.length);
     res.redirect(301, req.path.slice(0, -1) + query);
@@ -89,12 +101,66 @@ app.get("/join/", function (req, res) {
 // join to room
 app.get("/join/*", function (req, res) {
   if (Object.keys(req.query).length > 0) {
-    console.log("redirect:" + req.url + " to " + url.parse(req.url).pathname);
+    logme("redirect:" + req.url + " to " + url.parse(req.url).pathname);
     res.redirect(url.parse(req.url).pathname);
   } else {
     res.sendFile(path.join(__dirname, "www/client.html"));
   }
 });
+
+/**
+  VIDEOLIFY API v1
+  The response will give you a entrypoint / Room URL for your meeting.
+*/
+app.post(["/api/v1/meeting"], (req, res) => {
+  // check if user was authorized for the api call
+  let authorization = req.headers.authorization;
+  if (authorization != API_KEY_SECRET) {
+    logme("Videolify get meeting - Unauthorized", {
+      header: req.headers,
+      body: req.body,
+    });
+    return res.status(403).json({ error: "Unauthorized!" });
+  }
+  // setup videolify meeting URL
+  let host = req.headers.host;
+  let meetingURL = getMeetingURL(host) + "/join/" + makeId(15);
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify({ meeting: meetingURL }));
+
+  // logme the output if all done
+  logme("Videolify get meeting - Authorized", {
+    header: req.headers,
+    body: req.body,
+    meeting: meetingURL,
+  });
+});
+
+/**
+ * Get get Meeting Room URL
+ * @param {*} host string
+ * @returns meeting Room URL
+ */
+function getMeetingURL(host) {
+  return "http" + (host.includes("localhost") ? "" : "s") + "://" + host;
+}
+
+/**
+ * Generate random Id
+ * @param {*} length int
+ * @returns random id
+ */
+function makeId(length) {
+  var result = "";
+  var characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  var charactersLength = characters.length;
+  for (var i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+// end of VIDEOLIFY API v1
 
 /**
  * You should probably use a different stun-turn server
@@ -131,9 +197,10 @@ async function ngrokStart() {
     let pu1 = data.tunnels[1].public_url;
     let tunnelHttps = pu0.startsWith("https") ? pu0 : pu1;
     // server settings
-    console.log("settings", {
+    logme("settings", {
       http: localHost,
       https: tunnelHttps,
+      api_key_secret: API_KEY_SECRET,
       iceServers: iceServers,
       ngrok: {
         ngrok_enabled: ngrokEnabled,
@@ -149,7 +216,7 @@ async function ngrokStart() {
  * Start Local Server with ngrok https tunnel (optional)
  */
 server.listen(PORT, null, function () {
-  console.log(
+  logme(
     `%c
 	███████╗██╗ ██████╗ ███╗   ██╗      ███████╗███████╗██████╗ ██╗   ██╗███████╗██████╗ 
 	██╔════╝██║██╔════╝ ████╗  ██║      ██╔════╝██╔════╝██╔══██╗██║   ██║██╔════╝██╔══██╗
@@ -166,8 +233,9 @@ server.listen(PORT, null, function () {
     ngrokStart();
   } else {
     // server settings
-    console.log("settings", {
+    logme("settings", {
       http: localHost,
+      api_key_secret: API_KEY_SECRET,
       iceServers: iceServers,
     });
   }
@@ -185,7 +253,7 @@ server.listen(PORT, null, function () {
  * On peer connected
  */
 io.sockets.on("connect", (socket) => {
-  console.log("[" + socket.id + "] --> connection accepted");
+  logme("[" + socket.id + "] --> connection accepted");
 
   socket.channels = {};
   sockets[socket.id] = socket;
@@ -197,7 +265,7 @@ io.sockets.on("connect", (socket) => {
     for (var channel in socket.channels) {
       removePeerFrom(channel);
     }
-    console.log("[" + socket.id + "] <--> disconnected");
+    logme("[" + socket.id + "] <--> disconnected");
     delete sockets[socket.id];
   });
 
@@ -205,7 +273,7 @@ io.sockets.on("connect", (socket) => {
    * On peer join
    */
   socket.on("join", (config) => {
-    console.log("[" + socket.id + "] --> join ", config);
+    logme("[" + socket.id + "] --> join ", config);
 
     var channel = config.channel;
     var peer_name = config.peerName;
@@ -214,7 +282,7 @@ io.sockets.on("connect", (socket) => {
     var peer_hand = config.peerHand;
 
     if (channel in socket.channels) {
-      console.log("[" + socket.id + "] [Warning] already joined", channel);
+      logme("[" + socket.id + "] [Warning] already joined", channel);
       return;
     }
     // no channel aka room in channels init
@@ -234,7 +302,7 @@ io.sockets.on("connect", (socket) => {
       peer_audio: peer_audio,
       peer_hand: peer_hand,
     };
-    console.log("connected peers grp by roomId", peers);
+    logme("connected peers grp by roomId", peers);
 
     for (var id in channels[channel]) {
       // offer false
@@ -251,7 +319,7 @@ io.sockets.on("connect", (socket) => {
         should_create_offer: true,
         iceServers: iceServers,
       });
-      console.log("[" + socket.id + "] emit add Peer [" + id + "]");
+      logme("[" + socket.id + "] emit add Peer [" + id + "]");
     }
 
     channels[channel][socket.id] = socket;
@@ -264,7 +332,7 @@ io.sockets.on("connect", (socket) => {
    */
   async function removePeerFrom(channel) {
     if (!(channel in socket.channels)) {
-      console.log("[" + socket.id + "] [Warning] not in ", channel);
+      logme("[" + socket.id + "] [Warning] not in ", channel);
       return;
     }
 
@@ -280,7 +348,7 @@ io.sockets.on("connect", (socket) => {
     for (var id in channels[channel]) {
       await channels[channel][id].emit("removePeer", { peer_id: socket.id });
       await socket.emit("removePeer", { peer_id: id });
-      console.log("[" + socket.id + "] emit remove Peer [" + id + "]");
+      logme("[" + socket.id + "] emit remove Peer [" + id + "]");
     }
   }
 
@@ -291,7 +359,7 @@ io.sockets.on("connect", (socket) => {
     let peer_id = config.peer_id;
     let ice_candidate = config.ice_candidate;
     /*
-    console.log(
+    logme(
       "[" + socket.id + "] relay ICE-candidate to [" + peer_id + "] ",
       { address: config.ice_candidate.address }
     ); // ice_candidate
@@ -311,7 +379,7 @@ io.sockets.on("connect", (socket) => {
     let peer_id = config.peer_id;
     let session_description = config.session_description;
 
-    console.log(
+    logme(
       "[" + socket.id + "] relay SessionDescription to [" + peer_id + "] ",
       { type: session_description.type }
     ); // session_description
@@ -335,7 +403,7 @@ io.sockets.on("connect", (socket) => {
     let name = config.name;
     let msg = config.msg;
 
-    console.log(
+    logme(
       "[" +
         socket.id +
         "] emit onMessage to [room_id: " +
@@ -389,7 +457,7 @@ io.sockets.on("connect", (socket) => {
         peers[room_id][peer_id]["peer_name"] = peer_name_new;
         peer_id_to_update = peer_id;
         /*
-        console.log("[" + socket.id + "] change peer name", {
+        logme("[" + socket.id + "] change peer name", {
           room_id: room_id,
           peer_id: peer_id,
           peer_name_old: peer_name_old,
@@ -401,13 +469,10 @@ io.sockets.on("connect", (socket) => {
 
     // refresh if found
     if (peer_id_to_update && Object.keys(peerConnections).length != 0) {
-      console.log(
-        "[" + socket.id + "] emit onCName to [room_id: " + room_id + "]",
-        {
-          peer_id: peer_id_to_update,
-          peer_name: peer_name_new,
-        }
-      );
+      logme("[" + socket.id + "] emit onCName to [room_id: " + room_id + "]", {
+        peer_id: peer_id_to_update,
+        peer_name: peer_name_new,
+      });
       for (var peer_id in peerConnections) {
         if (sockets[peer_id]) {
           sockets[peer_id].emit("onCName", {
@@ -444,7 +509,7 @@ io.sockets.on("connect", (socket) => {
             break;
         }
         /*
-        console.log("[" + socket.id + "] change " + element + " status", {
+        logme("[" + socket.id + "] change " + element + " status", {
           room_id: room_id,
           peer_name: peer_name,
           element: element,
@@ -456,7 +521,7 @@ io.sockets.on("connect", (socket) => {
 
     // socket.id aka peer that send this status
     if (Object.keys(peerConnections).length != 0) {
-      console.log(
+      logme(
         "[" + socket.id + "] emit onpeerStatus to [room_id: " + room_id + "]",
         {
           peer_id: socket.id,
@@ -486,7 +551,7 @@ io.sockets.on("connect", (socket) => {
 
     // socket.id aka peer that send this status
     if (Object.keys(peerConnections).length != 0) {
-      console.log(
+      logme(
         "[" + socket.id + "] emit onmuteEveryone to [room_id: " + room_id + "]",
         {
           peer_id: socket.id,
@@ -513,7 +578,7 @@ io.sockets.on("connect", (socket) => {
 
     // socket.id aka peer that send this status
     if (Object.keys(peerConnections).length != 0) {
-      console.log(
+      logme(
         "[" + socket.id + "] emit onhideEveryone to [room_id: " + room_id + "]",
         {
           peer_name: peer_name,
@@ -537,7 +602,7 @@ io.sockets.on("connect", (socket) => {
     let peer_id = config.peer_id;
     let peer_name = config.peer_name;
 
-    console.log(
+    logme(
       "[" +
         socket.id +
         "] kick out peer [" +
@@ -563,7 +628,7 @@ io.sockets.on("connect", (socket) => {
     let peer_name = config.peer_name;
     let file = config.file;
 
-    console.log(
+    logme(
       "[" +
         socket.id +
         "] Peer [" +
@@ -594,3 +659,13 @@ io.sockets.on("connect", (socket) => {
     }
   });
 }); // end [sockets.on-connect]
+
+/**
+ * log with UTC data time
+ * @param {*} msg message any
+ * @param {*} op optional params
+ */
+function logme(msg, op = "") {
+  let dataTime = new Date().toISOString().replace(/T/, " ").replace(/Z/, "");
+  console.log("[" + dataTime + "] " + msg, op);
+}

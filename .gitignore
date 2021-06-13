@@ -17,3 +17,6 @@ npm-debug.log
 # personal env
 .env
 .vercel
+
+# yarn
+yarn.lock
