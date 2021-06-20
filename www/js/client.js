@@ -159,7 +159,6 @@ let whiteboardColorPicker;
 let whiteboardBlackColor;
 let whiteboardCloseBtn;
 let whiteboardFsBtn;
-let whiteboardGhostBtn;
 let whiteboardCleanBtn;
 let whiteboardSaveBtn;
 let whiteboardEraserBtn;
@@ -255,7 +254,6 @@ function getHtmlElementsById() {
   whiteboardCloseBtn = getId("whiteboardCloseBtn");
   whiteboardFsBtn = getId("whiteboardFsBtn");
   whiteboardColorPicker = getId("whiteboardColorPicker");
-  whiteboardGhostBtn = getId("whiteboardGhostBtn");
   whiteboardSaveBtn = getId("whiteboardSaveBtn");
   whiteboardEraserBtn = getId("whiteboardEraserBtn");
   whiteboardCleanBtn = getId("whiteboardCleanBtn");
@@ -380,10 +378,6 @@ function setButtonsTitle() {
   });
   tippy(whiteboardColorPicker, {
     content: "COLOR picker",
-    placement: "bottom",
-  });
-  tippy(whiteboardGhostBtn, {
-    content: "GHOST background",
     placement: "bottom",
   });
   tippy(whiteboardSaveBtn, {
@@ -1222,7 +1216,7 @@ function setTheme(theme) {
       document.documentElement.style.setProperty("--msger-private-bg", "black");
       document.documentElement.style.setProperty("--wb-bg", "transperent");
       document.documentElement.style.setProperty("--wb-hbg", "#000000");
-      document.documentElement.style.setProperty("--btn-bg", "transparent");
+      document.documentElement.style.setProperty("--btn-bg", "#000000");
       document.documentElement.style.setProperty("--btn-color", "white");
       document.documentElement.style.setProperty("--btn-opc", "0.7");
       document.documentElement.style.setProperty("--btns-left", "20px");
@@ -1918,21 +1912,6 @@ function setMyWhiteboardBtn() {
   whiteboardFsBtn.addEventListener("click", (e) => {
     whiteboardResize();
     remoteWbAction("resize");
-  });
-  // ghost mode
-  whiteboardGhostBtn.addEventListener("click", (e) => {
-    if (videolifyTheme == "ghost") return;
-    if (e.target.className == "fas fa-ghost") {
-      e.target.className = "fas fa-undo";
-      document.documentElement.style.setProperty(
-        "--wb-bg",
-        "rgba(0, 0, 0, 0.7)"
-      );
-      document.documentElement.style.setProperty("--wb-hbg", "#000000");
-    } else {
-      e.target.className = "fas fa-ghost";
-      document.documentElement.style.setProperty("--wb-bg", "#000000");
-    }
   });
   // erase whiteboard
   whiteboardEraserBtn.addEventListener("click", (e) => {
