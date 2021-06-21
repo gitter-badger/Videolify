@@ -1214,7 +1214,7 @@ function setTheme(theme) {
       document.documentElement.style.setProperty("--body-bg", "black");
       document.documentElement.style.setProperty("--msger-bg", "transparent");
       document.documentElement.style.setProperty("--msger-private-bg", "black");
-      document.documentElement.style.setProperty("--wb-bg", "transperent");
+      document.documentElement.style.setProperty("--wb-bg", "#000000");
       document.documentElement.style.setProperty("--wb-hbg", "#000000");
       document.documentElement.style.setProperty("--btn-bg", "#000000");
       document.documentElement.style.setProperty("--btn-color", "white");
@@ -3386,8 +3386,8 @@ function whiteboardResize() {
     content = "VIEW full screen";
     isWhiteboardFs = false;
   } else {
-    document.documentElement.style.setProperty("--wb-width", "100%");
-    document.documentElement.style.setProperty("--wb-height", "100%");
+    document.documentElement.style.setProperty("--wb-width", "99%");
+    document.documentElement.style.setProperty("--wb-height", "99%");
     fitToContainer(canvas);
     whiteboardFsBtn.className = "fas fa-compress-alt";
     content = "EXIT full screen";
