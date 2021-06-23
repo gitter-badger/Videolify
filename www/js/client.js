@@ -805,7 +805,11 @@ function initPeer() {
         // refresh remote peers avatar name
         setPeerAvatarImgName(peer_id + "_avatar", peers[peer_id]["peer_name"]);
         // refresh remote peers hand icon status and title
-        setPeerHandStatus(peer_id, peers[peer_id]["peer_hand"]);
+        setPeerHandStatus(
+          peer_id,
+          peers[peer_id]["peer_name"],
+          peers[peer_id]["peer_hand"]
+        );
         // refresh remote peers video icon status and title
         setPeerVideoStatus(peer_id, peers[peer_id]["peer_video"]);
         // refresh remote peers audio icon status and title
@@ -983,19 +987,15 @@ function initPeer() {
 
   // refresh peers video - audio - hand icon status and title
   signalingSocket.on("onpeerStatus", (config) => {
-    let peer_id = config.peer_id;
-    let element = config.element;
-    let status = config.status;
-
     switch (element) {
       case "video":
-        setPeerVideoStatus(peer_id, status);
+        setPeerVideoStatus(config.peer_id, config.status);
         break;
       case "audio":
-        setPeerAudioStatus(peer_id, status);
+        setPeerAudioStatus(config.peer_id, config.status);
         break;
       case "hand":
-        setPeerHandStatus(peer_id, status);
+        setPeerHandStatus(config.peer_id, config.peer_name, config.status);
         break;
     }
   });
@@ -1009,15 +1009,19 @@ function initPeer() {
         drawRemote(config);
         break;
       case "clean":
+        userLog("toast", config.peer_name + " has cleaned the board");
         whiteboardClean();
         break;
       case "open":
+        userLog("toast", config.peer_name + " has opened the board");
         whiteboardOpen();
         break;
       case "close":
+        userLog("toast", config.peer_name + " has closed the board");
         whiteboardClose();
         break;
         case "resize":
+          userLog("toast", config.peer_name + " has resized the board");
         whiteboardResize();
         break;
       // ...
@@ -2206,7 +2210,7 @@ async function shareRoomUrl() {
     try {
       // not add title and description to load metadata from url
       await navigator.share({ url: myRoomUrl });
-      userLog("info", "Room Shared successfully!");
+      userLog("toast", "Room Shared successfully!");
     } catch (err) {
       errorNavigatorShare = true;
       /*  This feature is available only in secure contexts (HTTPS),
@@ -2295,6 +2299,7 @@ function copyRoomURL() {
   document.execCommand("copy");
   console.log("Copied to clipboard Join Link ", roomURL);
   document.body.removeChild(tmpInput);
+  userLog("toast", "Meeting URL is copied to clipboard");
 }
 
 /**
@@ -3287,6 +3292,7 @@ function setMyVideoStatus(status) {
 /**
  * Set Participant Hand Status Icon and Title
  * @param {*} peer_id
+ * @param {*} peer_name
  * @param {*} status
  */
 function setPeerHandStatus(peer_id, status) {
@@ -3567,6 +3573,7 @@ function remoteWbAction(action) {
   if (thereIsPeerConnections()) {
     signalingSocket.emit("wb", {
       peerConnections: peerConnections,
+      peer_name: myPeerName,
       act: action,
     });
   }
@@ -3818,14 +3825,14 @@ function startDownload(data) {
   incomingFileData = [];
   receiveBuffer = [];
   receivedSize = 0;
-  console.log(
-    "incoming file: " +
-      incomingFileInfo.fileName +
-      " size: " +
-      bytesToSize(incomingFileInfo.fileSize) +
-      " type " +
-      incomingFileInfo.fileType
-  );
+  let fileToReceiveInfo =
+  incomingFileInfo.fileName +
+  " size: " +
+  bytesToSize(incomingFileInfo.fileSize) +
+  " type: " +
+  incomingFileInfo.fileType;
+  console.log(fileToReceiveInfo);
+  userLog("toast", fileToReceiveInfo)
 }
 
 /**
@@ -3963,7 +3970,7 @@ function setMyAudioOff(peer_name) {
   myAudioStatus = localMediaStream.getAudioTracks()[0].enabled;
   audioBtn.className = "fas fa-microphone-slash";
   setMyAudioStatus(myAudioStatus);
-  userLog("info", peer_name + " has disabled your audio");
+  userLog("toast", peer_name + " has disabled your audio");
 }
 
 /**
@@ -3976,7 +3983,7 @@ function setMyVideoOff(peer_name) {
   myVideoStatus = localMediaStream.getVideoTracks()[0].enabled;
   videoBtn.className = "fas fa-video-slash";
   setMyVideoStatus(myVideoStatus);
-  userLog("info", peer_name + " has disabled your video");
+  userLog("toast", peer_name + " has disabled your video");
 }
 
 /**
@@ -4230,6 +4237,19 @@ function userLog(type, message) {
         hideClass: {
           popup: "animate__animated animate__fadeOutUp",
         },
+      });
+      break;
+      case "toast":
+      const Toast = Swal.mixin({
+        background: swalBackground,
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+      Toast.fire({
+        icon: "info",
+        title: message,
       });
       break;
     // ......
