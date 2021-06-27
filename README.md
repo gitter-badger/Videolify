@@ -155,7 +155,7 @@ You can use a service like [ngrok](https://ngrok.com/) or deploy it on:
 
 <br>
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app) [![Join the chat at https://gitter.im/Videolify/community](https://badges.gitter.im/Videolify/community.svg)](https://gitter.im/Videolify/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ` DEMO : ` https://videolify-jaideep25.up.railway.app/
 
